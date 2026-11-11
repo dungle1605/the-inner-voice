@@ -1,0 +1,6 @@
+@InnerVoice.Api_HostAddress = http://localhost:5197
+
+GET {{InnerVoice.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
