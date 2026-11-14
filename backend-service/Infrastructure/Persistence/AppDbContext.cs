@@ -1,8 +1,10 @@
+using InnerVoice.Application.Common.Interfaces;
+using InnerVoice.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace InnerVoice.Api.Data;
+namespace InnerVoice.Infrastructure.Persistence;
 
-public class AppDbContext : DbContext
+public class AppDbContext : DbContext, IAppDbContext
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -19,7 +21,8 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.SessionId);
             entity.HasIndex(e => e.Timestamp);
+            entity.Property(e => e.RiskLevel)
+                  .HasConversion<string>();
         });
     }
 }
-

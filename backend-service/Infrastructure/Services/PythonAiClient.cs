@@ -1,12 +1,9 @@
 using System.Net.Http.Json;
-using InnerVoice.Api.Models;
+using InnerVoice.Application.Common.Interfaces;
+using InnerVoice.Application.DTOs;
+using Microsoft.Extensions.Logging;
 
-namespace InnerVoice.Api.Services;
-
-public interface IPythonAiClient
-{
-    Task<string> GenerateChatResponseAsync(string message, List<ChatMessage> history, CancellationToken cancellationToken = default);
-}
+namespace InnerVoice.Infrastructure.Services;
 
 public class PythonAiClient : IPythonAiClient
 {
@@ -19,7 +16,7 @@ public class PythonAiClient : IPythonAiClient
         _logger = logger;
     }
 
-    public async Task<string> GenerateChatResponseAsync(string message, List<ChatMessage> history, CancellationToken cancellationToken = default)
+    public async Task<string> GenerateChatResponseAsync(string message, List<ChatMessageDto> history, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -51,4 +48,3 @@ public class PythonAiClient : IPythonAiClient
         public string Response { get; set; } = string.Empty;
     }
 }
-

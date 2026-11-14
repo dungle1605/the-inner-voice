@@ -1,11 +1,7 @@
 using System.Text.RegularExpressions;
+using InnerVoice.Application.Common.Interfaces;
 
-namespace InnerVoice.Api.Services;
-
-public interface IPiiAnonymizer
-{
-    string Anonymize(string text);
-}
+namespace InnerVoice.Infrastructure.Services;
 
 public class PiiAnonymizer : IPiiAnonymizer
 {
@@ -21,4 +17,3 @@ public class PiiAnonymizer : IPiiAnonymizer
         return sanitized;
     }
 }
-

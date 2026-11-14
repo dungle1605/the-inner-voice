@@ -1,28 +1,27 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List, Optional
-from app.rag_engine import generate_response
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.v1.routers.chat_router import router as chat_router
+from app.api.v1.routers.health_router import router as health_router
 
-app = FastAPI(title="Inner Voice AI Service")
+def create_application() -> FastAPI:
+    application = FastAPI(
+        title="Inner Voice AI Microservice",
+        description="Clean Architecture RAG & Adolescent Mental Health AI Platform (Azure Foundry & OpenAI)",
+        version="2.0.0"
+    )
 
-class ChatMessage(BaseModel):
-    role: str
-    content: str
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
-class ChatRequest(BaseModel):
-    message: str
-    history: Optional[List[ChatMessage]] = []
+    # Đăng ký các Router phiên bản hóa (v1)
+    application.include_router(chat_router)
+    application.include_router(health_router)
 
-@app.post('/api/chat')
-async def chat_endpoint(request: ChatRequest):
-    try:
-        history_dict = [{"role": m.role, "content": m.content} for m in request.history]
+    return application
 
-        response_text = generate_response(request.message, chat_history=history_dict)
-        return {"response": response_text}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/health")
-def health_check():
-    return {"status": "healthy"}
+app = create_application()

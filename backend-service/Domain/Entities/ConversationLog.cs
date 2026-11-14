@@ -1,4 +1,6 @@
-namespace InnerVoice.Api.Data;
+using InnerVoice.Domain.Enums;
+
+namespace InnerVoice.Domain.Entities;
 
 public class ConversationLog
 {
@@ -6,7 +8,6 @@ public class ConversationLog
     public string SessionId { get; set; } = string.Empty;
     public string Role { get; set; } = string.Empty;
     public string AnonymizedContent { get; set; } = string.Empty;
-    public string RiskLevel { get; set; } = "Low";
+    public RiskLevel RiskLevel { get; set; } = RiskLevel.Low;
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
-
