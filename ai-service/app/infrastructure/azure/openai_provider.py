@@ -2,7 +2,7 @@ import logging
 from typing import List
 from openai import AzureOpenAI
 from azure.identity import DefaultAzureCredential
-from app.config import settings
+from app.core.config import settings
 from app.domain.models import ChatMessage
 from app.domain.protocols import LLMProviderProtocol
 from app.core.exceptions import LLMProviderError

@@ -2,7 +2,7 @@ import logging
 from typing import List
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
-from app.config import settings
+from app.core.config import settings
 from app.domain.models import RetrievedSnippet
 from app.domain.protocols import VectorStoreProtocol
 from app.core.exceptions import VectorStoreError

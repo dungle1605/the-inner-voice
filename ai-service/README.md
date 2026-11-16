@@ -4,58 +4,59 @@
 
 ---
 
-## 🏗️ 1. Cấu trúc Clean Architecture
+## 🏗️ 1. Bản đồ cấu trúc thư mục (100% Khớp với Mã nguồn thực tế)
 
-Khác với các mã nguồn prototype dạng flat-file, cấu trúc này tuân thủ nguyên lý **Dependency Inversion** (các module cấp cao không phụ thuộc module cấp thấp, cả hai cùng phụ thuộc vào Interface / Protocol):
+Toàn bộ mã nguồn trong thư mục `app/` được tổ chức thành 5 tầng rõ ràng theo nguyên lý **Dependency Inversion** (các module cấp cao không phụ thuộc module cấp thấp, cả hai cùng phụ thuộc vào Interface / Protocol):
 
 ```
 ai-service/
+├── Dockerfile                             # Container hóa Python 3.11-slim chạy Uvicorn
+├── requirements.txt                       # Thư viện phụ thuộc (FastAPI, Azure SDKs, Pydantic)
 ├── app/
-│   ├── core/                              # 1. CORE & DOMAIN FOUNDATIONS
-│   │   ├── config.py                      # Cấu hình biến môi trường Azure
-│   │   ├── exceptions.py                  # Domain Exceptions (AIException, SafetyPolicyViolationError)
+│   ├── main.py                            # FastAPI Application Factory & nạp Router
+│   │
+│   ├── core/                              # [TẦNG 1] NỀN TẢNG CẤU HÌNH & PROMPTS
+│   │   ├── config.py                      # Nạp và quản lý biến môi trường từ .env
+│   │   ├── exceptions.py                  # Domain Exceptions (AIException, LLMProviderError, ...)
 │   │   └── prompts/
-│   │       └── mental_health_prompts.py   # Mẫu System Prompt chuẩn y khoa (WHO/UNICEF)
+│   │       └── mental_health_prompts.py   # Mẫu System Prompt y khoa chuẩn WHO/UNICEF
 │   │
-│   ├── domain/                            # 2. DOMAIN SCHEMAS & PROTOCOLS (PEP 544)
+│   ├── domain/                            # [TẦNG 2] MÔ HÌNH THỰC THỂ & PROTOCOLS (PEP 544)
 │   │   ├── models.py                      # ChatMessage, RiskLevel, TriageAssessment, RetrievedSnippet
-│   │   └── protocols.py                   # LLMProviderProtocol, VectorStoreProtocol
+│   │   └── protocols.py                   # LLMProviderProtocol, VectorStoreProtocol (Trừu tượng hóa)
 │   │
-│   ├── application/                       # 3. APPLICATION USE CASES & ORCHESTRATION
-│   │   ├── rag/
-│   │   │   └── hybrid_retriever.py        # Dịch vụ truy xuất ngữ cảnh y khoa
-│   │   ├── triage/
-│   │   │   └── crisis_triage.py           # Phân loại rủi ro khẩn cấp (Crisis Evaluation)
-│   │   └── services/
-│   │       └── mental_health_orchestrator.py # Điều phối: Triage -> Retrieval -> Prompt -> Synthesis
-│   │
-│   ├── infrastructure/                    # 4. EXTERNAL ADAPTERS (Cụ thể hóa Protocols)
+│   ├── infrastructure/                    # [TẦNG 3] KẾT NỐI HẠ TẦNG NGOÀI (AZURE CLOUD)
 │   │   └── azure/
-│   │       ├── openai_provider.py         # Triển khai LLMProviderProtocol qua AzureOpenAI SDK
-│   │       └── search_provider.py         # Triển khai VectorStoreProtocol qua Azure AI Search
+│   │       ├── openai_provider.py         # Triển khai LLMProviderProtocol bằng AzureOpenAI SDK
+│   │       └── search_provider.py         # Triển khai VectorStoreProtocol bằng Azure AI Search
 │   │
-│   ├── api/                               # 5. PRESENTATION LAYER (FastAPI Web Interface)
-│   │   ├── dependencies.py                # FastAPI Dependency Injection Container
-│   │   └── v1/
-│   │       ├── schemas.py                 # Pydantic DTOs cho API Request / Response
-│   │       └── routers/
-│   │           ├── chat_router.py         # POST /api/chat (Ủy quyền cho Orchestrator)
-│   │           └── health_router.py       # GET /health
+│   ├── application/                       # [TẦNG 4] USE CASES & ĐIỀU PHỐI NGHIỆP VỤ
+│   │   ├── triage/
+│   │   │   └── crisis_triage.py           # Bộ lọc an toàn quét từ khóa tự hại/khủng hoảng
+│   │   ├── rag/
+│   │   │   └── hybrid_retriever.py        # Truy xuất tài liệu tham khảo tâm lý học
+│   │   └── services/
+│   │       └── mental_health_orchestrator.py # Nhạc trưởng: Triage -> Retrieval -> Prompt -> Synthesis
 │   │
-│   ├── rag_engine.py                      # Backward-compatible Facade
-│   └── main.py                            # FastAPI Application Factory
-│
-├── Dockerfile                             # Container Python 3.11-slim
-└── requirements.txt                       # Thư viện phụ thuộc
+│   └── api/                               # [TẦNG 5] PRESENTATION LAYER (REST API)
+│       ├── dependencies.py                # Container Dependency Injection của FastAPI
+│       └── v1/
+│           ├── schemas.py                 # Pydantic DTOs (Request / Response validation)
+│           └── routers/
+│               ├── chat_router.py         # Endpoint POST /api/chat
+│               └── health_router.py       # Endpoint GET /health
 ```
 
 ---
 
-## 🛡️ 2. Đạo đức AI & Tiêu chuẩn Y khoa (EU AI Act & WHO)
+## 🛡️ 2. Nguyên lý Vận hành & Đạo đức AI (WHO & EU AI Act)
 
-* **Phân tầng Triage trước khi gọi LLM:** Trước khi gửi bất kỳ dữ liệu nào sang OpenAI, `CrisisTriageService` quét các biểu hiện tự hại / khủng hoảng. Nếu phát hiện rủi ro nghiêm trọng, hệ thống ngắt sinh văn bản tự do và kích hoạt thông điệp cứu trợ kèm hotline 3114 (Pháp) / 111 (Việt Nam).
-* **Grounding (Chống ảo giác y khoa):** Kỹ thuật Hybrid RAG kết nối vào Azure AI Search để đưa các đoạn trích từ cẩm nang tâm lý học lâm sàng vào System Prompt.
-* **Sliding Window Memory:** Quản lý lịch sử hội thoại trượt (tối đa 6 tin gần nhất) để tối ưu hóa latency và chi phí token.
+Mỗi tin nhắn gửi đến `POST /api/chat` sẽ trải qua chu trình xử lý nghiêm ngặt:
+
+1. **Crisis Triage (Sàng lọc khẩn cấp):** [`crisis_triage.py`](file:///g:/the-inner-voice/ai-service/app/application/triage/crisis_triage.py) quét nội dung để phát hiện sớm nguy cơ tự hại hoặc khủng hoảng tâm lý (đa ngôn ngữ: tiếng Việt, tiếng Pháp, tiếng Anh). Nếu nguy cơ ở mức `Critical`, hệ thống **lập tức ngắt luồng gọi LLM** và trả về thông điệp cứu trợ kèm số hotline **3114 (Pháp)** / **111 (Việt Nam)** để đảm bảo an toàn tuyệt đối, tránh nguy cơ ảo giác.
+2. **Hybrid Retrieval (Truy xuất tài liệu y khoa):** [`hybrid_retriever.py`](file:///g:/the-inner-voice/ai-service/app/application/rag/hybrid_retriever.py) truy vấn Azure AI Search để lấy các đoạn trích từ cẩm nang tâm lý chính thống nhằm làm giàu ngữ cảnh (Grounding).
+3. **Sliding Window Memory (Bộ nhớ cửa sổ trượt):** [`mental_health_orchestrator.py`](file:///g:/the-inner-voice/ai-service/app/application/services/mental_health_orchestrator.py) giữ lại tối đa 6 lượt tin nhắn gần nhất để mô hình duy trì ngữ cảnh mà vẫn tiết kiệm chi phí token và giảm độ trễ (latency).
+4. **Synthesis (Sinh phản hồi đồng cảm):** [`openai_provider.py`](file:///g:/the-inner-voice/ai-service/app/infrastructure/azure/openai_provider.py) gửi prompt đã được ghép hoàn chỉnh tới Azure OpenAI (`gpt-4o-mini`).
 
 ---
 
